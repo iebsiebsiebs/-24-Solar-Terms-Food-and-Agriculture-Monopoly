@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>二十四節氣食農大富翁</title>
+<style>
+:root{
+  --sp:#3B6D11;--spb:#EAF3DE;--spl:#C0DD97;
+  --su:#993C1D;--sub:#FAECE7;--sul:#F5C4B3;
+  --au:#854F0B;--aub:#FAEEDA;--aul:#FAC775;
+  --wi:#185FA5;--wib:#E6F1FB;--wil:#B5D4F4;
+  --du:#534AB7;--dub:#EEEDFE;--dul:#CECBF6;
+  --bg:#F5F0E8;--surf:#FFFEF8;--card:#fff;
+  --tx:#2C2C2A;--mu:#6B6B66;--bd:#D5D0C0;--r:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif;color:var(--tx);height:100vh;overflow:hidden}
+#app{display:flex;flex-direction:column;height:100vh}
+#hdr{background:var(--sp);color:#fff;padding:7px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+#hdr h1{font-size:14px;font-weight:700}
+#main{display:grid;grid-template-columns:1fr 270px;flex:1;overflow:hidden}
+#ba{overflow:auto;padding:10px;display:flex;align-items:flex-start;justify-content:center}
+#sb{background:var(--surf);border-left:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden}
+
+/* board */
+#board{display:grid;grid-template-columns:repeat(7,70px);grid-template-rows:repeat(7,70px);gap:3px}
+.cell{border-radius:6px;border:1.5px solid var(--bd);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px;cursor:pointer;transition:transform .12s;position:relative;font-size:10px}
+.cell:hover{transform:scale(1.07);z-index:2}
+.emo{font-size:15px;line-height:1}
+.nm{font-weight:700;text-align:center;line-height:1.2;margin-top:1px}
+.dt{font-size:9px;opacity:.7;margin-top:1px}
+.cell.spring{background:var(--spb);border-color:var(--spl);color:var(--sp)}
+.cell.summer{background:var(--sub);border-color:var(--sul);color:var(--su)}
+.cell.autumn{background:var(--aub);border-color:var(--aul);color:var(--au)}
+.cell.winter{background:var(--wib);border-color:var(--wil);color:var(--wi)}
+.cell.dual{border-width:2.5px;border-color:var(--du);background:var(--dub);color:var(--du)}
+.cell.sc{background:#fff;border-color:var(--sp);border-width:2px;color:var(--sp)}
+.cell.cc{background:var(--surf);border-color:var(--bd);color:var(--mu);cursor:default}
+.cell.cc:hover{transform:none}
+.star{position:absolute;top:1px;right:3px;font-size:8px;color:var(--du)}
+.toks{position:absolute;top:2px;right:2px;display:flex;flex-wrap:wrap;gap:1px;max-width:30px}
+.tok{width:10px;height:10px;border-radius:50%;border:1px solid rgba(0,0,0,.3);font-size:6px;display:flex;align-items:center;justify-content:center}
+
+/* sidebar */
+#tb{padding:9px 13px;border-bottom:1px solid var(--bd);flex-shrink:0}
+#tb .lbl{font-size:10px;color:var(--mu)}
+#tb .pn{font-size:17px;font-weight:700;margin-top:1px}
+#tb .ph{font-size:11px;color:var(--mu);margin-top:2px}
+#ps{padding:7px 13px;display:flex;gap:5px;border-bottom:1px solid var(--bd);flex-shrink:0;flex-wrap:wrap}
+.pc{border-radius:20px;padding:3px 9px;font-size:10px;font-weight:600;display:flex;align-items:center;gap:4px;border:1.5px solid transparent}
+.pc.active{border-color:currentColor}
+#res{padding:8px 13px;border-bottom:1px solid var(--bd);flex-shrink:0}
+.rt{font-size:10px;color:var(--mu);margin-bottom:5px;font-weight:600}
+.rr{display:flex;gap:6px;flex-wrap:wrap}
+.rb{background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:4px 9px;text-align:center;min-width:55px}
+.rv{font-size:18px;font-weight:700}
+.rl{font-size:9px;color:var(--mu);margin-top:1px}
+#log{flex:1;overflow-y:auto;padding:8px 13px}
+.li{font-size:11px;color:var(--mu);padding:3px 0;border-bottom:1px solid var(--bd);line-height:1.5}
+.li.hi{color:var(--tx);font-weight:600}
+.li.ok{color:var(--sp)}
+.li.bad{color:var(--su)}
+.li.ev{color:var(--du)}
+#act{padding:9px 13px;border-top:1px solid var(--bd);display:flex;flex-direction:column;gap:5px;flex-shrink:0}
+button{font-family:inherit;font-size:12px;font-weight:600;border:none;border-radius:var(--r);cursor:pointer;padding:7px 12px;transition:opacity .15s,transform .1s}
+button:hover{opacity:.85}
+button:active{transform:scale(.97)}
+button:disabled{opacity:.35;cursor:not-allowed}
+.bp{background:var(--sp);color:#fff}
+.bs{background:var(--bg);color:var(--tx);border:1px solid var(--bd)}
+.be{background:var(--dub);color:var(--du);border:1px solid var(--dul)}
+.bh{background:var(--aub);color:var(--au);border:1px solid var(--aul)}
+.bpl{background:var(--spb);color:var(--sp);border:1px solid var(--spl)}
+.br{display:flex;gap:5px}
+.br button{flex:1}
+
+/* modal */
+.mbg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:100}
+.md{background:var(--card);border-radius:12px;padding:18px 22px;max-width:380px;width:90%;max-height:82vh;overflow-y:auto}
+.md h2{font-size:16px;font-weight:700;margin-bottom:10px}
+.md p{font-size:12px;color:var(--mu);line-height:1.6;margin-bottom:8px}
+.ef{background:var(--spb);border-radius:7px;padding:8px 11px;font-size:12px;color:var(--sp);font-weight:600;margin-bottom:10px}
+.yi{background:var(--spb);border-radius:7px;padding:8px 11px;font-size:11px;color:var(--sp);margin-bottom:6px}
+.ji{background:var(--sub);border-radius:7px;padding:8px 11px;font-size:11px;color:var(--su)}
+.mbt{display:flex;gap:7px;margin-top:12px}
+.mbt button{flex:1}
+.tag{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-bottom:6px}
+.tsp{background:var(--spb);color:var(--sp)}.tsu{background:var(--sub);color:var(--su)}
+.tau{background:var(--aub);color:var(--au)}.twi{background:var(--wib);color:var(--wi)}
+.tdu{background:var(--dub);color:var(--du)}
+
+.cl{display:flex;flex-direction:column;gap:5px;margin:8px 0}
+.ci{border:1px solid var(--bd);border-radius:7px;padding:7px 11px;cursor:pointer;transition:background .12s}
+.ci:hover{background:var(--spb)}
+.ci.sel{border-color:var(--sp);background:var(--spb)}
+.ci .cn{font-size:12px;font-weight:700}
+.ci .cd{font-size:10px;color:var(--mu);margin-top:2px}
+.ci .cc{font-size:10px;color:var(--au);margin-top:2px;font-weight:600}
+.hi2{border:1px solid var(--bd);border-radius:7px;padding:7px 11px;cursor:pointer;transition:background .12s}
+.hi2:hover{background:var(--aub)}
+.hi2.sel{border-color:var(--au);background:var(--aub)}
+
+/* setup */
+#setup{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:200}
+.sb2{background:var(--card);border-radius:14px;padding:26px 30px;max-width:460px;width:90%}
+.sb2 h1{font-size:20px;font-weight:800;color:var(--sp);margin-bottom:4px}
+.sb2 p{font-size:12px;color:var(--mu);margin-bottom:16px}
+.pi{display:flex;flex-direction:column;gap:7px;margin-bottom:16px}
+.pir{display:flex;align-items:center;gap:9px}
+.pir label{font-size:12px;font-weight:600;min-width:55px}
+.pir input{border:1px solid var(--bd);border-radius:6px;padding:5px 9px;font-family:inherit;font-size:12px;flex:1;background:var(--bg)}
+.rp{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:5px}
+.rb2{border:1.5px solid var(--bd);border-radius:7px;padding:7px;cursor:pointer;text-align:center;background:var(--bg);transition:all .14s}
+.rb2:hover{border-color:var(--sp);background:var(--spb)}
+.rb2.picked{border-color:var(--sp);background:var(--spb)}
+.rb2 .rn{font-size:12px;font-weight:700}
+.rb2 .ra{font-size:10px;color:var(--mu);margin-top:2px}
+.nb{display:flex;gap:7px;margin-bottom:14px}
+.nb button{flex:1;padding:9px;border:1.5px solid var(--bd);border-radius:7px;background:var(--bg);cursor:pointer;font-size:14px;font-weight:700;transition:all .12s}
+.nb button.sel{background:var(--sp);color:#fff;border-color:var(--sp)}
+
+/* end */
+#end{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:300}
+.eb{background:var(--card);border-radius:14px;padding:28px;max-width:340px;width:90%;text-align:center}
+.eb h2{font-size:20px;font-weight:800;margin-bottom:14px;color:var(--sp)}
+.rk{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bd);font-size:13px}
+.rk .ri{font-size:18px;font-weight:800;width:30px}
+</style>
+</head>
+<body>
+
+<div id="setup">
+  <div class="sb2">
+    <h1>🌾 二十四節氣食農大富翁</h1>
+    <p>後壁菁寮農村桌遊 · 2–4 人同台輪流</p>
+    <div style="font-size:12px;font-weight:700;margin-bottom:7px">人數</div>
+    <div class="nb" id="nb">
+      <button class="sel" onclick="setN(2)">2 人</button>
+      <button onclick="setN(3)">3 人</button>
+      <button onclick="setN(4)">4 人</button>
+    </div>
+    <div class="pi" id="pi"></div>
+    <button class="bp" style="width:100%;padding:11px;font-size:14px" onclick="startGame()">開始遊戲 🌱</button>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+  <div id="hdr">
+    <h1>🌾 二十四節氣食農大富翁</h1>
+    <span id="rl" style="font-size:11px;opacity:.8"></span>
+  </div>
+  <div id="main">
+    <div id="ba"><div id="board"></div></div>
+    <div id="sb">
+      <div id="tb">
+        <div class="lbl">目前玩家</div>
+        <div class="pn" id="cn"></div>
+        <div class="ph" id="cp"></div>
+      </div>
+      <div id="ps"></div>
+      <div id="res">
+        <div class="rt">資源 / 作物</div>
+        <div class="rr" id="rr"></div>
+      </div>
+      <div id="log"></div>
+      <div id="act"></div>
+    </div>
+  </div>
+</div>
+
+<div id="end" style="display:none">
+  <div class="eb">
+    <h2>🏆 遊戲結束！</h2>
+    <div id="rklist"></div>
+    <button class="bp" style="width:100%;margin-top:18px" onclick="location.reload()">再玩一局</button>
+  </div>
+</div>
+
+<div id="mr"></div>
+
+<script>
+// ─── 資料 ────────────────────────────────────────────────────────
+const JQ = [
+  {name:'出發點',sub:'',season:'start',emoji:'🏁',dual:false,eff:null},
+  {name:'立春',sub:'2/4',season:'spring',emoji:'🌱',dual:true,eff:{txt:'種子+1，抽事件卡',fn:p=>res(p,'seed',1)}},
+  {name:'雨水',sub:'2/19',season:'spring',emoji:'🌧',dual:false,eff:{txt:'水+2',fn:p=>res(p,'water',2)}},
+  {name:'驚蟄',sub:'3/6',season:'spring',emoji:'⚡',dual:false,eff:{txt:'勞力−1',fn:p=>res(p,'labor',-1)}},
+  {name:'春分',sub:'3/21',season:'spring',emoji:'🌸',dual:false,eff:{txt:'勞力+1、種子+1',fn:p=>{res(p,'labor',1);res(p,'seed',1)}}},
+  {name:'清明',sub:'4/5',season:'spring',emoji:'🍃',dual:false,eff:{txt:'種子+1',fn:p=>res(p,'seed',1)}},
+  {name:'穀雨',sub:'4/20',season:'spring',emoji:'🌾',dual:false,eff:{txt:'水+2',fn:p=>res(p,'water',2)}},
+  {name:'立夏',sub:'5/6',season:'summer',emoji:'☀️',dual:false,eff:{txt:'勞力−1',fn:p=>res(p,'labor',-1)}},
+  {name:'小滿',sub:'5/21',season:'summer',emoji:'🌻',dual:false,eff:{txt:'有稻米→水+1',fn:p=>{if(hasP(p,'稻米'))res(p,'water',1)}}},
+  {name:'芒種',sub:'6/6',season:'summer',emoji:'🌾',dual:false,eff:{txt:'勞力−1、種子+1',fn:p=>{res(p,'labor',-1);res(p,'seed',1)}}},
+  {name:'夏至',sub:'6/21',season:'summer',emoji:'🌞',dual:true,eff:{txt:'水−1，抽事件卡',fn:p=>res(p,'water',-1)}},
+  {name:'小暑',sub:'7/7',season:'summer',emoji:'🔥',dual:false,eff:{txt:'水−1',fn:p=>res(p,'water',-1)}},
+  {name:'大暑',sub:'7/23',season:'summer',emoji:'🌡',dual:false,eff:{txt:'勞力−1',fn:p=>res(p,'labor',-1)}},
+  {name:'立秋',sub:'8/7',season:'autumn',emoji:'🍂',dual:true,eff:{txt:'種子+1，抽事件卡',fn:p=>res(p,'seed',1)}},
+  {name:'處暑',sub:'8/23',season:'autumn',emoji:'🌤',dual:false,eff:{txt:'水+1、勞力−1',fn:p=>{res(p,'water',1);res(p,'labor',-1)}}},
+  {name:'白露',sub:'9/8',season:'autumn',emoji:'💧',dual:false,eff:{txt:'勞力+1',fn:p=>res(p,'labor',1)}},
+  {name:'秋分',sub:'9/23',season:'autumn',emoji:'🍁',dual:false,eff:{txt:'水+1',fn:p=>res(p,'water',1)}},
+  {name:'寒露',sub:'10/8',season:'autumn',emoji:'🌨',dual:false,eff:{txt:'有黑豆/洋香瓜→勞力+1',fn:p=>{if(hasP(p,'黑豆')||hasP(p,'洋香瓜'))res(p,'labor',1)}}},
+  {name:'霜降',sub:'10/23',season:'autumn',emoji:'❄️',dual:false,eff:{txt:'有洋香瓜→收成+1',fn:p=>{if(hasP(p,'洋香瓜'))p.sb=true}}},
+  {name:'立冬',sub:'11/7',season:'winter',emoji:'❄️',dual:false,eff:{txt:'種子+1',fn:p=>res(p,'seed',1)}},
+  {name:'小雪',sub:'11/22',season:'winter',emoji:'🌨',dual:false,eff:{txt:'勞力+1',fn:p=>res(p,'labor',1)}},
+  {name:'大雪',sub:'12/7',season:'winter',emoji:'☃️',dual:false,eff:{txt:'水−1',fn:p=>res(p,'water',-1)}},
+  {name:'冬至',sub:'12/22',season:'winter',emoji:'🌙',dual:true,eff:{txt:'勞力+1，抽事件卡',fn:p=>res(p,'labor',1)}},
+  {name:'小寒',sub:'1/6',season:'winter',emoji:'🥶',dual:false,eff:{txt:'勞力−1',fn:p=>res(p,'labor',-1)}},
+  {name:'大寒',sub:'1/20',season:'winter',emoji:'🌬',dual:false,eff:{txt:'任選資源+1',fn:p=>dahan(p)}},
+];
+
+const CROPS = [
+  {name:'水圳田稻米',type:'稻米',plant:'spring',harvest:'summer',water:3,labor:2,seed:1,yield:5},
+  {name:'菁寮米',type:'稻米',plant:'spring',harvest:'summer',water:3,labor:3,seed:1,yield:6},
+  {name:'二期稻',type:'稻米',plant:'summer',harvest:'autumn',water:2,labor:2,seed:1,yield:4},
+  {name:'秋收稻',type:'稻米',plant:'summer',harvest:'autumn',water:2,labor:3,seed:1,yield:5},
+  {name:'新東黑豆',type:'黑豆',plant:'autumn',harvest:'winter',water:1,labor:2,seed:2,yield:4},
+  {name:'契作高粱',type:'高粱',plant:'spring',harvest:'summer',water:1,labor:2,seed:2,yield:4},
+  {name:'早春香瓜',type:'洋香瓜',plant:'winter',harvest:'spring',water:2,labor:3,seed:2,yield:6},
+  {name:'菁寮網紋瓜',type:'洋香瓜',plant:'winter',harvest:'spring',water:3,labor:3,seed:2,yield:7},
+  {name:'耐熱洋香瓜',type:'洋香瓜',plant:'spring',harvest:'summer',water:2,labor:4,seed:2,yield:6},
+];
+
+const EVS = [
+  {id:'E01',name:'茄苳媽遶境',yi:'答對→勞力+1',ji:'答錯→勞力−1',qa:'茄苳媽回駕地點？',ans:'下茄苳泰安宮旌忠廟',
+   yf:p=>res(p,'labor',1),jf:p=>res(p,'labor',-1)},
+  {id:'E02',name:'三十六庄祈安',yi:'社區夥伴→勞力+2；其他→勞力+1',ji:'勞力=0→少收1作物',
+   ck:p=>true,yf:p=>res(p,'labor',p.role==='社區夥伴'?2:1),jf:p=>{if(p.labor<=0)p.crop=Math.max(0,p.crop-1)}},
+  {id:'E03',name:'菁寮老街人潮',yi:'1作物換任一資源+2',ji:'無作物→勞力−1',
+   ck:p=>p.crop>0,yf:p=>tradeModal(p,2),jf:p=>res(p,'labor',-1)},
+  {id:'E04',name:'菁寮市集',yi:'設市集標記（路過玩家繳1作物）',ji:'無作物→無效',
+   ck:p=>p.crop>0,
+   yf:p=>{G.mkt={own:G.cur,cell:p.pos};lg(p.name+' 設置市集於 '+JQ[p.pos].name,'ev')},
+   jf:p=>lg(p.name+' 無作物，無法設市集','bad')},
+  {id:'E05',name:'洋香瓜好時節',yi:'有洋香瓜→立即+2作物',ji:'無洋香瓜→水−1',
+   ck:p=>hasP(p,'洋香瓜'),yf:p=>{p.crop+=2;lg(p.name+' +2作物','ok')},jf:p=>res(p,'water',-1)},
+  {id:'E06',name:'洋香瓜評鑑',yi:'洋香瓜收成+2',ji:'無洋香瓜→勞力−1',
+   ck:p=>hasP(p,'洋香瓜'),yf:p=>{p.mb=(p.mb||0)+2;lg(p.name+' 洋香瓜評鑑+2','ok')},jf:p=>res(p,'labor',-1)},
+  {id:'E07',name:'德馨宮活動',yi:'答對→種子+1',ji:'答錯→種子−1',qa:'洋香瓜好時節舉辦地點？',ans:'菁寮老街德馨宮',
+   yf:p=>res(p,'seed',1),jf:p=>res(p,'seed',-1)},
+  {id:'E08',name:'高粱契作',yi:'有高粱→收成+2',ji:'無高粱→種子−1',
+   ck:p=>hasP(p,'高粱'),yf:p=>{p.lb=(p.lb||0)+2;lg(p.name+' 高粱契作+2','ok')},jf:p=>res(p,'seed',-1)},
+  {id:'E09',name:'高粱乾旱',yi:'付1水→勞力+1',ji:'水=0→高粱收成−1',
+   ck:p=>p.water>0,yf:p=>{res(p,'water',-1);res(p,'labor',1)},jf:p=>{p.lb=(p.lb||0)-1}},
+  {id:'E10',name:'清明播高粱',yi:'春季→免費種高粱',ji:'非春季→種子−1',
+   ck:p=>JQ[p.pos].season==='spring',
+   yf:p=>{const c=CROPS.find(x=>x.name==='契作高粱');p.planted.push({...c});lg(p.name+' 免費種植高粱','ok')},
+   jf:p=>res(p,'seed',-1)},
+  {id:'E11',name:'新東黑豆田',yi:'有黑豆→收成+1、種子+1',ji:'無黑豆→水−1',
+   ck:p=>hasP(p,'黑豆'),yf:p=>{p.db=(p.db||0)+1;res(p,'seed',1)},jf:p=>res(p,'water',-1)},
+  {id:'E12',name:'黑豆加工日',yi:'1黑豆作物→資源+3',ji:'無黑豆→勞力−1',
+   ck:p=>p.crop>0,yf:p=>tradeModal(p,3),jf:p=>res(p,'labor',-1)},
+  {id:'E13',name:'無米樂割稻飯',yi:'有稻米→勞力+2',ji:'無稻米→無效',
+   ck:p=>hasP(p,'稻米'),yf:p=>res(p,'labor',2),jf:p=>lg(p.name+' 無稻米，無效','bad')},
+  {id:'E14',name:'冠軍米故鄉',yi:'有收成作物→+2作物',ji:'無作物→種子−1',
+   ck:p=>p.crop>0,yf:p=>{p.crop+=2;lg(p.name+' 冠軍米+2作物','ok')},jf:p=>res(p,'seed',-1)},
+  {id:'E15',name:'水圳巡查',yi:'付1勞力→水+2',ji:'不付→水−1',
+   ck:p=>p.labor>0,yf:p=>{res(p,'labor',-1);res(p,'water',2)},jf:p=>res(p,'water',-1)},
+  {id:'E16',name:'連日大雨',yi:'稻米→水+1；洋香瓜→收成−1',ji:'（兩效果獨立）',
+   ck:p=>true,
+   yf:p=>{if(hasP(p,'稻米'))res(p,'water',1);if(hasP(p,'洋香瓜')){p.mb=(p.mb||0)-1;lg(p.name+' 洋香瓜受損','bad')}},
+   jf:p=>{}},
+  {id:'E17',name:'颱風季',yi:'付1勞力→保護作物',ji:'不付→隨機作物延後',
+   ck:p=>p.labor>0,yf:p=>res(p,'labor',-1),jf:p=>{if(p.planted.length>0){p.planted[0].delayed=true;lg(p.name+' 作物受颱風影響','bad')}}},
+  {id:'E18',name:'嫁妝一牛車',yi:'勞力+1、作物+1',ji:'勞力=0→無獎勵',
+   ck:p=>p.labor>0,yf:p=>{res(p,'labor',1);p.crop+=1;lg(p.name+' 嫁妝+1勞力+1作物','ok')},jf:p=>lg(p.name+' 勞力不足，無法參加','bad')},
+  {id:'E19',name:'重興宮新春',yi:'全體種子+1，自己勞力+1',ji:'自己作物最多→只得種子+1',
+   ck:p=>{const mx=Math.max(...G.pls.map(x=>x.crop));return p.crop<mx},
+   yf:p=>{G.pls.forEach(x=>res(x,'seed',1));res(p,'labor',1)},
+   jf:p=>res(p,'seed',1)},
+  {id:'E20',name:'神農大帝保佑',yi:'答對→水+1、種子+1',ji:'答錯→水−1',qa:'新港東重興宮主祀？',ans:'神農大帝',
+   yf:p=>{res(p,'water',1);res(p,'seed',1)},jf:p=>res(p,'water',-1)},
+];
+
+const ROLES = {
+  '農友':    {init:{water:2,labor:3,seed:2},desc:'種稻米時水−1'},
+  '返鄉青年':{init:{water:1,labor:2,seed:3},desc:'市集路過玩家繳1作物，你得2'},
+  '食農教師':{init:{water:2,labor:2,seed:2},desc:'問答答對額外得1種子'},
+  '社區夥伴':{init:{water:2,labor:3,seed:1},desc:'幫他人抵扣勞力，你得1作物'},
+};
+const RNS = Object.keys(ROLES);
+const COLS = ['#2D6A2D','#993C1D','#185FA5','#854F0B'];
+const EMOS = ['🧑‍🌾','👨‍🍳','👩‍🏫','🤝'];
+const SNM = {spring:'春季',summer:'夏季',autumn:'秋季',winter:'冬季'};
+
+// ─── 外圈位置 ────────────────────────────────────────────────────
+const OUTER=[];
+for(let c=0;c<7;c++)OUTER.push([0,c]);
+for(let r=1;r<7;r++)OUTER.push([r,6]);
+for(let c=5;c>=0;c--)OUTER.push([6,c]);
+for(let r=5;r>=1;r--)OUTER.push([r,0]);
+
+// ─── 狀態 ────────────────────────────────────────────────────────
+let G={};
+let pendDahan=false;
+
+function cp(){return G.pls[G.cur]}
+
+function res(p,k,v){
+  p[k]=Math.max(0,(p[k]||0)+v);
+  if(v>0)lg(p.name+' '+kn(k)+' +'+v,'ok');
+  else if(v<0)lg(p.name+' '+kn(k)+' '+v,'bad');
+}
+function kn(k){return{water:'💧水',labor:'🌿勞力',seed:'🌱種子'}[k]||k}
+function hasP(p,type){return p.planted.some(c=>c.type===type)}
+function shuf(a){for(let i=a.length-1;i>0;i--){const j=0|Math.random()*(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function lg(msg,cls){
+  const d=document.getElementById('log');
+  const el=document.createElement('div');
+  el.className='li '+(cls||'');el.textContent=msg;
+  d.prepend(el);
+  while(d.children.length>80)d.removeChild(d.lastChild);
+}
+
+// ─── 底盤 ────────────────────────────────────────────────────────
+function buildBoard(){
+  const bd=document.getElementById('board');bd.innerHTML='';
+  for(let r=0;r<7;r++){
+    for(let c=0;c<7;c++){
+      const el=document.createElement('div');
+      if(r>=1&&r<=5&&c>=1&&c<=5){
+        if(r===1&&c===1){
+          el.className='cell cc';
+          el.style.gridColumn='2/7';el.style.gridRow='2/7';
+          el.innerHTML='<div style="font-size:20px;margin-bottom:3px">🀄</div><div style="font-size:11px;font-weight:700;color:#3B6D11">二十四節氣食農大富翁</div>';
+          bd.appendChild(el);
+        }
+        continue;
+      }
+      const idx=OUTER.findIndex(([rr,cc])=>rr===r&&cc===c);
+      if(idx<0){bd.appendChild(el);continue;}
+      const jq=JQ[idx];
+      el.className='cell '+jq.season+(jq.dual?' dual':'')+(idx===0?' sc':'');
+      el.dataset.i=idx;
+      el.innerHTML='<div class="emo">'+jq.emoji+'</div><div class="nm">'+jq.name+'</div><div class="dt">'+jq.sub+'</div>';
+      if(jq.dual)el.innerHTML+='<div class="star">★</div>';
+      const td=document.createElement('div');td.className='toks';td.id='tk'+idx;
+      el.appendChild(td);
+      el.onclick=()=>cellClick(idx);
+      bd.appendChild(el);
+    }
+  }
+}
+
+function renderToks(){
+  document.querySelectorAll('.toks').forEach(d=>d.innerHTML='');
+  G.pls.forEach((p,i)=>{
+    const d=document.getElementById('tk'+p.pos);if(!d)return;
+    const t=document.createElement('div');t.className='tok';
+    t.style.background=COLS[i];t.textContent=EMOS[i];
+    d.appendChild(t);
+  });
+}
+
+function cellClick(idx){
+  const jq=JQ[idx];
+  const sn=jq.season==='start'?'出發點':SNM[jq.season]||'';
+  const tc=jq.dual?'tdu':('t'+jq.season.slice(0,2));
+  modal({
+    t:jq.emoji+' '+jq.name,
+    b:'<span class="tag '+tc+'">'+sn+(jq.dual?' ★ 事件格':'')+'</span><br>'+(jq.eff?jq.eff.txt:'出發點'),
+    btns:[{l:'關閉',c:'bs',f:closeM}]
+  });
+}
+
+// ─── 側邊欄 ──────────────────────────────────────────────────────
+function phL(){
+  return{roll:'擲骰移動',jq:'節氣效果',action:'農事行動',event:'抽取事件卡',eturn:'回合結束'}[G.ph]||G.ph;
+}
+
+function renderSB(){
+  const p=cp();
+  document.getElementById('rl').textContent='第 '+G.round+' 輪';
+  document.getElementById('cn').textContent=p.name;
+  document.getElementById('cn').style.color=COLS[G.cur];
+  document.getElementById('cp').textContent=phL();
+
+  // player chips
+  const ps=document.getElementById('ps');ps.innerHTML='';
+  G.pls.forEach((pl,i)=>{
+    const ch=document.createElement('div');
+    ch.className='pc'+(i===G.cur?' active':'');
+    ch.style.color=COLS[i];ch.style.background=COLS[i]+'18';
+    ch.innerHTML=EMOS[i]+' '+pl.name+' <strong>'+pl.crop+'🌾</strong>';
+    ps.appendChild(ch);
+  });
+
+  // resources
+  const rr=document.getElementById('rr');rr.innerHTML='';
+  [['water','💧水'],['labor','🌿勞力'],['seed','🌱種子'],['crop','🌾作物']].forEach(([k,lb])=>{
+    const b=document.createElement('div');b.className='rb';
+    b.innerHTML='<div class="rv">'+p[k]+'</div><div class="rl">'+lb+'</div>';
+    rr.appendChild(b);
+  });
+
+  renderAct();
+}
+
+function renderAct(){
+  const p=cp();
+  const div=document.getElementById('act');div.innerHTML='';
+  if(G.ph==='roll'){
+    const b=mk('button','bp','🎲 擲骰移動');b.onclick=doRoll;div.appendChild(b);
+  }
+  else if(G.ph==='jq'){
+    const b=mk('button','bp','✅ 確認節氣效果');b.onclick=doJQ;div.appendChild(b);
+  }
+  else if(G.ph==='action'){
+    const row=document.createElement('div');row.className='br';
+    const bpl=mk('button','bpl','🌱 種植');bpl.onclick=plantM;
+    const bh=mk('button','bh','🍀 收成');bh.onclick=harvestM;
+    row.appendChild(bpl);row.appendChild(bh);div.appendChild(row);
+    const sk=mk('button','bs','⏭ 跳過');sk.onclick=endT;div.appendChild(sk);
+    if(p.planted.length>0){
+      const inf=document.createElement('div');
+      inf.style.cssText='font-size:10px;color:#854F0B;margin-top:3px';
+      inf.textContent='種植中：'+p.planted.map(c=>c.name).join('、');
+      div.appendChild(inf);
+    }
+  }
+  else if(G.ph==='event'){
+    const b=mk('button','be','🃏 抽取事件卡');b.onclick=drawEv;div.appendChild(b);
+  }
+  else if(G.ph==='eturn'){
+    const b=mk('button','bp','➡ 下一位玩家');b.onclick=nextP;div.appendChild(b);
+  }
+}
+
+function mk(tag,cls,txt){
+  const el=document.createElement(tag);el.className=cls;el.textContent=txt;return el;
+}
+
+// ─── 骰子/移動 ───────────────────────────────────────────────────
+function doRoll(){
+  const p=cp();
+  const d=1+0|Math.random()*6;
+  lg('🎲 '+p.name+' 擲出 '+d+' 點','hi');
+  const old=p.pos;
+  p.pos=(p.pos+d)%25;
+  if(p.pos<old&&old!==0)lg(p.name+' 通過出發點','ev');
+  // market check
+  if(G.mkt&&G.mkt.own!==G.cur&&p.pos===G.mkt.cell){
+    const own=G.pls[G.mkt.own];
+    if(p.crop>0){
+      p.crop=Math.max(0,p.crop-1);
+      const gain=own.role==='返鄉青年'?2:1;
+      own.crop+=gain;lg(own.name+' 市集收到 '+gain+' 作物','ok');
+    }
+  }
+  renderToks();
+  G.ph='jq';
+  renderSB();
+  // show popup
+  const jq=JQ[p.pos];
+  if(jq.eff){
+    const sn=jq.season==='start'?'出發點':SNM[jq.season]||'';
+    const tc=jq.dual?'tdu':('t'+jq.season.slice(0,2));
+    modal({
+      t:jq.emoji+' 停在「'+jq.name+'」',
+      b:'<span class="tag '+tc+'">'+sn+(jq.dual?' ★ 節氣＋事件':'')+'</span>',
+      ef:jq.eff.txt,
+      btns:[{l:'確認效果',c:'bp',f:()=>{closeM();doJQ()}}]
+    });
+  } else {doJQ()}
+}
+
+function doJQ(){
+  const p=cp();const jq=JQ[p.pos];
+  if(jq.eff&&jq.eff.fn){
+    jq.eff.fn(p);
+    lg(jq.emoji+' '+p.name+' 在「'+jq.name+'」：'+jq.eff.txt);
+  }
+  // clear market at dual nodes
+  if(jq.dual&&G.mkt){G.mkt=null;lg('市集標記移除','ev')}
+  G.ph=jq.dual?'event':'action';
+  renderSB();
+}
+
+// ─── 事件卡 ──────────────────────────────────────────────────────
+function drawEv(){
+  if(!G.deck.length)G.deck=shuf([...EVS]);
+  const ev=G.deck.pop();const p=cp();
+  lg('🃏 '+p.name+' 抽到「'+ev.name+'」','ev');
+  if(ev.qa){
+    modal({
+      t:'🃏 '+ev.name,b:'<b>問答題：</b>'+ev.qa,
+      yi:'答對→ '+ev.yi,ji:'答錯→ '+ev.ji,
+      btns:[
+        {l:'✅ 答對',c:'bpl',f:()=>{ev.yf(p);if(p.role==='食農教師')res(p,'seed',1);closeM();afterEv()}},
+        {l:'❌ 答錯',c:'bh',f:()=>{ev.jf(p);closeM();afterEv()}},
+      ]
+    });
+  } else {
+    const ok=ev.ck?ev.ck(p):true;
+    modal({
+      t:'🃏 '+ev.name,
+      b:ok?'符合「宜」條件！':'不符合「宜」，執行「忌」',
+      yi:ev.yi,ji:ev.ji,
+      btns:[{l:ok?'執行宜效果 ✅':'執行忌效果 ⚠',c:ok?'bpl':'bh',f:()=>{
+        if(ok)ev.yf(p);else ev.jf(p);closeM();afterEv();
+      }}]
+    });
+  }
+}
+
+function afterEv(){G.ph='action';renderSB()}
+
+// ─── 大寒選資源 ──────────────────────────────────────────────────
+function dahan(p){
+  modal({
+    t:'🌬 大寒 — 選擇獎勵',b:'年終結算，任選一項資源+1：',
+    btns:[
+      {l:'💧 水+1',c:'bs',f:()=>{res(p,'water',1);closeM()}},
+      {l:'🌿 勞力+1',c:'bs',f:()=>{res(p,'labor',1);closeM()}},
+      {l:'🌱 種子+1',c:'bs',f:()=>{res(p,'seed',1);closeM()}},
+    ]
+  });
+}
+
+// ─── 交換資源 ────────────────────────────────────────────────────
+function tradeModal(p,bonus){
+  if(p.crop<=0){modal({t:'無法交換',b:'沒有作物可交換。',btns:[{l:'關閉',c:'bs',f:closeM}]});return}
+  modal({
+    t:'交換資源',b:'消耗1作物，選擇任一資源 +'+bonus+'：',
+    btns:[
+      {l:'💧 水',c:'bs',f:()=>{p.crop=Math.max(0,p.crop-1);res(p,'water',bonus);closeM()}},
+      {l:'🌿 勞力',c:'bs',f:()=>{p.crop=Math.max(0,p.crop-1);res(p,'labor',bonus);closeM()}},
+      {l:'🌱 種子',c:'bs',f:()=>{p.crop=Math.max(0,p.crop-1);res(p,'seed',bonus);closeM()}},
+    ]
+  });
+}
+
+// ─── 種植 ────────────────────────────────────────────────────────
+function plantM(){
+  const p=cp();const season=JQ[p.pos].season;
+  const avail=CROPS.filter(c=>{
+    if(c.plant!==season)return false;
+    const wc=c.type==='稻米'&&p.role==='農友'?Math.max(0,c.water-1):c.water;
+    return p.water>=wc&&p.labor>=c.labor&&p.seed>=c.seed;
+  });
+  if(!avail.length){
+    modal({t:'無法種植',b:'目前季節或資源不足，沒有可種植的作物。',btns:[{l:'關閉',c:'bs',f:closeM}]});return;
+  }
+  let selIdx=-1;
+  const list='<div class="cl">'+avail.map((c,i)=>{
+    const wc=c.type==='稻米'&&p.role==='農友'?Math.max(0,c.water-1):c.water;
+    return '<div class="ci" id="ci'+i+'" onclick="selC('+i+')"><div class="cn">'+c.name+'</div>'
+      +'<div class="cd">收成季：'+SNM[c.harvest]+' ／ 收'+c.yield+'作物</div>'
+      +'<div class="cc">需 💧'+wc+' 🌿'+c.labor+' 🌱'+c.seed+'</div></div>';
+  }).join('')+'</div>';
+  modal({
+    t:'🌱 選擇種植作物',b:list,
+    btns:[
+      {l:'取消',c:'bs',f:closeM},
+      {l:'確認種植',c:'bpl',f:()=>{
+        const el=document.querySelector('.ci.sel');
+        if(!el){alert('請先選擇作物');return}
+        const idx=parseInt(el.id.replace('ci',''));
+        const c=avail[idx];
+        const wc=c.type==='稻米'&&p.role==='農友'?Math.max(0,c.water-1):c.water;
+        p.water=Math.max(0,p.water-wc);
+        p.labor=Math.max(0,p.labor-c.labor);
+        p.seed=Math.max(0,p.seed-c.seed);
+        p.planted.push({...c,delayed:false});
+        lg(p.name+' 種植「'+c.name+'」（'+SNM[c.harvest]+'可收成）','ok');
+        closeM();endT();
+      }}
+    ]
+  });
+  window.selC=function(i){document.querySelectorAll('.ci').forEach(e=>e.classList.remove('sel'));document.getElementById('ci'+i).classList.add('sel')};
+}
+
+// ─── 收成 ────────────────────────────────────────────────────────
+function harvestM(){
+  const p=cp();const season=JQ[p.pos].season;
+  const ready=p.planted.filter(c=>{
+    if(c.delayed){c.delayed=false;return false}
+    return c.harvest===season;
+  });
+  if(!ready.length){
+    modal({t:'無法收成',b:'目前季節沒有可收成的作物。',btns:[{l:'關閉',c:'bs',f:closeM}]});return;
+  }
+  const list='<div class="cl">'+ready.map((c,i)=>{
+    const lc=Math.ceil(c.labor/2);
+    return '<div class="hi2" id="hi'+i+'" onclick="selH('+i+')"><div class="cn">'+c.name+'</div>'
+      +'<div class="cd">收成：'+c.yield+' 作物token ／ 需 🌿'+lc+'勞力</div></div>';
+  }).join('')+'</div>';
+  modal({
+    t:'🍀 選擇收成',b:list,
+    btns:[
+      {l:'取消',c:'bs',f:closeM},
+      {l:'確認收成',c:'bh',f:()=>{
+        const el=document.querySelector('.hi2.sel');
+        if(!el){alert('請選擇作物');return}
+        const idx=parseInt(el.id.replace('hi',''));
+        const c=ready[idx];
+        const lc=Math.ceil(c.labor/2);
+        if(p.labor<lc){modal({t:'勞力不足',b:'收成需'+lc+'勞力，目前只有'+p.labor+'。',btns:[{l:'返回',c:'bs',f:closeM}]});return}
+        p.labor=Math.max(0,p.labor-lc);
+        let y=c.yield;
+        if(p.sb&&c.type==='洋香瓜'){y+=1;p.sb=false}
+        if(c.type==='洋香瓜'){y+=(p.mb||0);p.mb=0}
+        if(c.type==='高粱'){y+=(p.lb||0);p.lb=0}
+        if(c.type==='黑豆'){y+=(p.db||0);p.db=0}
+        y=Math.max(0,y);p.crop+=y;
+        const pi=p.planted.indexOf(c);if(pi>=0)p.planted.splice(pi,1);
+        lg(p.name+' 收成「'+c.name+'」+'+y+'作物','ok');
+        closeM();endT();
+      }}
+    ]
+  });
+  window.selH=function(i){document.querySelectorAll('.hi2').forEach(e=>e.classList.remove('sel'));document.getElementById('hi'+i).classList.add('sel')};
+}
+
+// ─── 回合流程 ────────────────────────────────────────────────────
+function endT(){
+  const p=cp();p.labor+=1;
+  lg(p.name+' 回合結束，獲得1勞力');
+  G.ph='eturn';renderSB();
+  if(G.round>=8&&G.cur===G.pls.length-1)showEnd();
+}
+
+function nextP(){
+  G.cur=(G.cur+1)%G.pls.length;
+  if(G.cur===0)G.round++;
+  G.ph='roll';
+  lg('── 換 '+cp().name+' 行動 ──','hi');
+  renderSB();renderToks();
+}
+
+function showEnd(){
+  const sorted=[...G.pls].sort((a,b)=>{
+    if(b.crop!==a.crop)return b.crop-a.crop;
+    const bk=new Set(b.planted.map(c=>c.type)).size;
+    const ak=new Set(a.planted.map(c=>c.type)).size;
+    return bk-ak;
+  });
+  const md=['🥇','🥈','🥉','4️⃣'];
+  document.getElementById('rklist').innerHTML=sorted.map((p,i)=>
+    '<div class="rk"><span class="ri">'+md[i]+'</span><span>'+p.name+'</span><span style="font-weight:700;color:'+COLS[G.pls.indexOf(p)]+'">'+p.crop+' 🌾</span></div>'
+  ).join('');
+  document.getElementById('end').style.display='flex';
+}
+
+// ─── Modal ───────────────────────────────────────────────────────
+function modal({t,b,ef,yi,ji,btns}){
+  closeM();
+  const bg=document.createElement('div');bg.className='mbg';bg.id='mo';
+  const md=document.createElement('div');md.className='md';
+  let h='<h2>'+t+'</h2>';
+  if(b)h+='<p>'+b+'</p>';
+  if(ef)h+='<div class="ef">📋 '+ef+'</div>';
+  if(yi)h+='<div class="yi">✅ 宜：'+yi+'</div>';
+  if(ji)h+='<div class="ji">⚠ 忌：'+ji+'</div>';
+  if(btns){
+    h+='<div class="mbt">';
+    btns.forEach((_,i)=>h+='<button id="mb'+i+'" class="'+btns[i].c+'">'+btns[i].l+'</button>');
+    h+='</div>';
+  }
+  md.innerHTML=h;bg.appendChild(md);
+  document.getElementById('mr').appendChild(bg);
+  if(btns)btns.forEach((b,i)=>{
+    const el=document.getElementById('mb'+i);
+    if(el)el.onclick=()=>{b.f();renderSB()};
+  });
+}
+function closeM(){const e=document.getElementById('mo');if(e)e.remove()}
+
+// ─── Setup ───────────────────────────────────────────────────────
+let sN=2,sRoles=[];
+function setN(n){
+  sN=n;
+  document.querySelectorAll('#nb button').forEach((b,i)=>b.classList.toggle('sel',i===n-2));
+  buildPI();
+}
+function buildPI(){
+  const div=document.getElementById('pi');div.innerHTML='';
+  sRoles=Array(sN).fill('');
+  for(let i=0;i<sN;i++){
+    const row=document.createElement('div');
+    row.innerHTML='<div class="pir"><label style="color:'+COLS[i]+'">'+EMOS[i]+' 玩家'+(i+1)+'</label>'
+      +'<input id="pn'+i+'" value="玩家'+(i+1)+'" maxlength="6"></div>'
+      +'<div class="rp" id="rp'+i+'">'+RNS.map((rn,j)=>
+        '<div class="rb2" id="rb'+i+''+j+'" onclick="pickR('+i+','+j+')">'
+        +'<div class="rn">'+rn+'</div><div class="ra">'+ROLES[rn].desc+'</div></div>'
+      ).join('')+'</div>';
+    div.appendChild(row);
+  }
+  RNS.forEach((rn,j)=>{if(j<sN)pickR(j,j)});
+}
+function pickR(pi,ri){
+  sRoles[pi]=RNS[ri];
+  document.querySelectorAll('#rp'+pi+' .rb2').forEach((b,j)=>b.classList.toggle('picked',j===ri));
+}
+
+function startGame(){
+  const pls=[];
+  for(let i=0;i<sN;i++){
+    const nm=(document.getElementById('pn'+i)||{}).value||'玩家'+(i+1);
+    const role=sRoles[i]||RNS[i%RNS.length];
+    const init=ROLES[role].init;
+    pls.push({name:nm,role,pos:0,...init,crop:0,planted:[],sb:false,mb:0,lb:0,db:0});
+  }
+  G={pls,cur:0,round:1,ph:'roll',deck:shuf([...EVS]),mkt:null};
+  document.getElementById('setup').style.display='none';
+  document.getElementById('app').style.display='flex';
+  buildBoard();renderToks();renderSB();
+  lg('遊戲開始！共 8 輪，收最多作物者獲勝。','hi');
+  lg('四大節氣（立春/夏至/立秋/冬至）停駐時會額外抽事件卡。','ev');
+}
+
+buildPI();
+</script>
+</body>
+</html>
